@@ -91,7 +91,19 @@ def przetworz(stacja_id: str, surowe: dict) -> dict:
     max_cm = properties.get("maximumStateValue")
     ostrzegawczy_cm = status.get("warningValue")
     alarmowy_cm = status.get("alarmValue")
-    trend = status.get("trend")
+
+    # Trend liczymy sami z poziom_cm/poprzedni_cm, zamiast ufać polu
+    # status.trend z hydro-back.imgw.pl — to nieudokumentowane API bywa
+    # niekonsekwentne (np. zaobserwowano wartość 10 zamiast oczekiwanego -1/0/1).
+    if poziom_cm is not None and poprzedni_cm is not None:
+        if poziom_cm > poprzedni_cm:
+            trend = 1
+        elif poziom_cm < poprzedni_cm:
+            trend = -1
+        else:
+            trend = 0
+    else:
+        trend = None
 
     procent_zakresu, procent_do_alarmowego = wylicz_wskazniki(
         poziom_cm, min_cm, max_cm, ostrzegawczy_cm
