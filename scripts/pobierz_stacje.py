@@ -42,7 +42,7 @@ HEADERS = {
     "Accept": "application/json",
 }
 
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 HISTORIA_DIR = DATA_DIR / "historia"
 SNAPSHOT_PLIK = DATA_DIR / "aktualny_stan.json"
 
@@ -189,4 +189,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
