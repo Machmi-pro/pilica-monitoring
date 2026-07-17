@@ -91,19 +91,12 @@ def przetworz(stacja_id: str, surowe: dict) -> dict:
     max_cm = properties.get("maximumStateValue")
     ostrzegawczy_cm = status.get("warningValue")
     alarmowy_cm = status.get("alarmValue")
-
-    # Trend liczymy sami z poziom_cm/poprzedni_cm, zamiast ufać polu
-    # status.trend z hydro-back.imgw.pl — to nieudokumentowane API bywa
-    # niekonsekwentne (np. zaobserwowano wartość 10 zamiast oczekiwanego -1/0/1).
-    if poziom_cm is not None and poprzedni_cm is not None:
-        if poziom_cm > poprzedni_cm:
-            trend = 1
-        elif poziom_cm < poprzedni_cm:
-            trend = -1
-        else:
-            trend = 0
-    else:
-        trend = None
+    # Trend liczymy PÓŹNIEJ, w main(), względem naszego własnego ostatniego
+    # wpisu w historii (nie względem previousState z API — to odzwierciedla
+    # wewnętrzny, krótszy interwał pomiarowy IMGW, niespójny z naszym cronem
+    # co 4h i myląco pokazujący "bez zmian" mimo realnej zmiany między
+    # naszymi odczytami).
+    trend = None
 
     procent_zakresu, procent_do_alarmowego = wylicz_wskazniki(
         poziom_cm, min_cm, max_cm, ostrzegawczy_cm
@@ -126,6 +119,34 @@ def przetworz(stacja_id: str, surowe: dict) -> dict:
         "procent_zakresu": procent_zakresu,
         "procent_do_alarmowego": procent_do_alarmowego,
     }
+
+
+def ostatni_zapisany_poziom(stacja_id: str):
+    """Zwraca poziom_cm z ostatniego wpisu w historii danej stacji, albo None."""
+    plik = HISTORIA_DIR / f"{stacja_id}.json"
+    if not plik.exists():
+        return None
+    try:
+        historia = json.loads(plik.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if not historia:
+        return None
+    return historia[-1].get("poziom_cm")
+
+
+def oblicz_trend(stacja_id: str, poziom_cm) -> int | None:
+    """Trend względem NASZEGO ostatniego zapisanego odczytu (nie previousState z API)."""
+    if poziom_cm is None:
+        return None
+    poprzedni = ostatni_zapisany_poziom(stacja_id)
+    if poprzedni is None:
+        return None
+    if poziom_cm > poprzedni:
+        return 1
+    if poziom_cm < poprzedni:
+        return -1
+    return 0
 
 
 # --- Zapis do plików -------------------------------------------------------
@@ -182,6 +203,7 @@ def main() -> int:
         try:
             surowe = pobierz_stacje(stacja_id)
             dane = przetworz(stacja_id, surowe)
+            dane["trend"] = oblicz_trend(stacja_id, dane["poziom_cm"])
             dane_stacji[stacja_id] = dane
             dopisz_historie(stacja_id, dane)
             print(f"OK  {stacja_id} ({dane['nazwa']}): {dane['poziom_cm']} cm")
