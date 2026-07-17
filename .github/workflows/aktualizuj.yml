@@ -1,1 +1,46 @@
+name: Aktualizuj dane stacji Pilica
+
+on:
+  schedule:
+    # Co 4h. UWAGA: cron w GitHub Actions jest zawsze w UTC.
+    - cron: "10 */4 * * *"
+  workflow_dispatch: {}   # pozwala odpalić ręcznie z zakładki Actions
+
+# Żeby workflow mógł commitować zmiany z powrotem do repo.
+permissions:
+  contents: write
+
+concurrency:
+  group: aktualizuj-dane
+  cancel-in-progress: false
+
+jobs:
+  pobierz:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Ustaw Pythona
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Zainstaluj zależności
+        run: pip install requests
+
+      - name: Pobierz dane stacji
+        run: python scripts/pobierz_stacje.py
+
+      - name: Commit i push zmian
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "Brak zmian w danych - pomijam commit."
+          else
+            git commit -m "Aktualizacja danych stacji Pilica $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
 
