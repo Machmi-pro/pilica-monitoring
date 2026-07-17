@@ -135,16 +135,13 @@ def ostatni_zapisany_poziom(stacja_id: str):
     return historia[-1].get("poziom_cm")
 
 
-def oblicz_trend(stacja_id: str, poziom_cm) -> int | None:
-    """Trend względem NASZEGO ostatniego zapisanego odczytu (nie previousState z API)."""
-    if poziom_cm is None:
+def trend_z_poziomow(poziom_cm, poprzedni_cm):
+    """Trend (-1/0/1) na podstawie dwóch odczytów, albo None gdy brak danych."""
+    if poziom_cm is None or poprzedni_cm is None:
         return None
-    poprzedni = ostatni_zapisany_poziom(stacja_id)
-    if poprzedni is None:
-        return None
-    if poziom_cm > poprzedni:
+    if poziom_cm > poprzedni_cm:
         return 1
-    if poziom_cm < poprzedni:
+    if poziom_cm < poprzedni_cm:
         return -1
     return 0
 
@@ -201,9 +198,14 @@ def main() -> int:
 
     for stacja_id in STACJE:
         try:
+            poprzedni_wlasny = ostatni_zapisany_poziom(stacja_id)
             surowe = pobierz_stacje(stacja_id)
             dane = przetworz(stacja_id, surowe)
-            dane["trend"] = oblicz_trend(stacja_id, dane["poziom_cm"])
+            # "Stan poprzedni" i "trend" muszą pochodzić z tego samego źródła
+            # (naszego ostatniego zapisu, nie previousState z API), inaczej
+            # mogą sobie zaprzeczać (np. "poprzedni = aktualny" + "malejący").
+            dane["poprzedni_cm"] = poprzedni_wlasny
+            dane["trend"] = trend_z_poziomow(dane["poziom_cm"], poprzedni_wlasny)
             dane_stacji[stacja_id] = dane
             dopisz_historie(stacja_id, dane)
             print(f"OK  {stacja_id} ({dane['nazwa']}): {dane['poziom_cm']} cm")
