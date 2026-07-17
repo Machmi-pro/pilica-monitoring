@@ -1,1 +1,216 @@
+:root{
+  --bg:#ffffff;
+  --bg-soft:#f4f8f8;
+  --panel-border:#dfe8e7;
+  --ink:#0e2a2a;
+  --ink-dim:#5c7876;
+  --tide:#1f8f80;
+  --tide-deep:#146b5f;
+  --alert:#c94a30;
+  --alert-bg:#fdeeea;
+  --caution:#b8791a;
+  --caution-bg:#fdf3e3;
+  --ok-bg:#e9f6f2;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background: var(--bg);
+  color:var(--ink);
+  font-family: 'Iowan Old Style', 'Georgia', serif;
+  min-height:100vh;
+  padding: 0 0 4rem;
+}
+.mono{ font-family: 'SF Mono','Menlo','Consolas',monospace; letter-spacing:0.02em; }
+
+header{
+  padding: 2.75rem 1.25rem 1.75rem;
+  max-width: 960px;
+  margin: 0 auto;
+  border-bottom: 1px solid var(--panel-border);
+}
+.eyebrow{
+  font-family:'SF Mono','Menlo',monospace;
+  font-size:0.7rem;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:var(--tide);
+  margin:0 0 0.6rem;
+}
+h1{
+  font-size: clamp(1.6rem, 6vw, 2.6rem);
+  font-weight:500;
+  margin:0 0 0.5rem;
+  color:var(--ink);
+  line-height:1.15;
+}
+.subtitle{ color:var(--ink-dim); font-size:0.98rem; max-width:56ch; margin:0; }
+
+main{ max-width:960px; margin:0 auto; padding: 1.75rem 1.25rem 0; }
+
+/* --- przełącznik stacji (ta sama pigułka co range-toggle) --- */
+.stacje-toggle{
+  display:flex;
+  gap:0.25rem;
+  background: var(--bg-soft);
+  border:1px solid var(--panel-border);
+  border-radius:99px;
+  padding:2px;
+  overflow-x:auto;
+  margin-bottom: 1.5rem;
+  scrollbar-width:none;
+}
+.stacje-toggle::-webkit-scrollbar{ display:none; }
+.stacja-btn{
+  flex:0 0 auto;
+  font-family:'SF Mono','Menlo',monospace;
+  font-size:0.72rem;
+  letter-spacing:0.02em;
+  border:none;
+  background:transparent;
+  color:var(--ink-dim);
+  padding:0.42rem 0.85rem;
+  border-radius:99px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition: background .15s, color .15s;
+}
+.stacja-btn.active{ background: var(--tide); color:#fff; }
+
+/* --- wskaźnik poziomu (gauge), identyczny wzorzec jak status-panel zalewu --- */
+.status-panel{
+  display:grid;
+  grid-template-columns: 90px 1fr;
+  gap: 1.5rem;
+  align-items:stretch;
+  background: var(--bg-soft);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+.gauge-wrap{ display:flex; flex-direction:column; align-items:center; gap:0.5rem;}
+.gauge{
+  position:relative;
+  width: 38px;
+  height: 190px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  overflow:hidden;
+  background: #ffffff;
+}
+.gauge-fill{
+  position:absolute; bottom:0; left:0; right:0;
+  background: linear-gradient(180deg, var(--tide), var(--tide-deep));
+  transition: height 1.2s cubic-bezier(.22,.9,.34,1);
+}
+.gauge-line{
+  position:absolute; left:-5px; right:-5px; height:1px;
+  background: #b7c7c5;
+}
+.gauge-line span{
+  position:absolute; right: 44px; top:-7px;
+  font-size:0.6rem; color: var(--ink-dim); white-space:nowrap;
+}
+.gauge-caption{ font-size:0.65rem; color:var(--ink-dim); text-align:center; line-height:1.3; }
+
+.status-copy{ display:flex; flex-direction:column; justify-content:center; }
+.status-value{
+  font-size: clamp(2rem, 7vw, 3rem);
+  line-height:1;
+  margin:0;
+  color: var(--ink);
+}
+.status-value span{ font-size:1rem; color:var(--ink-dim); margin-left:0.4rem; }
+.status-label{ margin:0.4rem 0 0.9rem; font-size:0.92rem; color:var(--ink-dim); line-height:1.7; }
+.status-badge{
+  display:inline-flex; align-items:center; gap:0.5rem;
+  font-family:'SF Mono','Menlo',monospace; font-size:0.72rem; letter-spacing:0.04em;
+  padding: 0.35rem 0.7rem; border-radius:99px; width:fit-content;
+  border:1px solid currentColor;
+}
+.updated-note{ font-size:0.74rem; color: var(--ink-dim); margin-top:0.75rem; font-family:'SF Mono','Menlo',monospace;}
+.updated-note a{ color: var(--tide); }
+
+section h2{
+  font-size:1.05rem; font-weight:600; color:var(--ink);
+  margin: 0 0 1rem; padding-top: 0.25rem;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.6rem;
+}
+.chart-card{
+  background: #ffffff;
+  border: 1px solid var(--panel-border);
+  border-radius:10px;
+  padding: 1.25rem 1.1rem 1rem;
+  margin-bottom: 2rem;
+}
+.legend-row{
+  display:flex; gap:1.25rem; flex-wrap:wrap;
+  font-size:0.76rem; color:var(--ink-dim); margin-top:0.9rem;
+}
+.legend-row span{ display:inline-flex; align-items:center; gap:0.4rem; }
+.swatch{ width:14px; height:3px; display:inline-block; }
+
+/* --- rozwijana historia (ten sam wzorzec co kap-history w zalewie) --- */
+.historia-toggle{
+  display:inline-flex; align-items:center; gap:0.4rem;
+  background:none; border:1px solid var(--panel-border); border-radius:99px;
+  padding:0.4rem 0.9rem;
+  font-family:'SF Mono','Menlo',monospace; font-size:0.72rem; letter-spacing:0.02em;
+  color:var(--tide); cursor:pointer; transition: background .15s, color .15s;
+}
+.historia-toggle:hover{ background: var(--bg-soft); }
+.historia-arrow{ display:inline-block; transition: transform .2s ease; }
+.historia-toggle.open .historia-arrow{ transform: rotate(180deg); }
+.historia-wrap{ margin-top:1rem; }
+.historia-wrap[hidden]{ display:none; }
+
+/* --- tabela: pełna wersja na szerokich ekranach --- */
+table{ width:100%; border-collapse:collapse; font-size:0.85rem; }
+th,td{ padding:0.55rem 0.5rem; text-align:right; border-bottom:1px solid var(--panel-border); }
+th:first-child, td:first-child{ text-align:left; }
+th{ color:var(--ink-dim); font-weight:600; font-family:'SF Mono','Menlo',monospace; font-size:0.66rem; letter-spacing:0.03em; text-transform:uppercase;}
+tr.below-warning td{ color: var(--caution); }
+tr.below-alarm td{ color: var(--alert); font-weight:700; }
+tr.below-warning{ background: var(--caution-bg); }
+tr.below-alarm{ background: var(--alert-bg); }
+
+/* --- RWD: poniżej 640px tabela zamienia się w listę kart --- */
+@media (max-width: 640px){
+  table, thead, tbody, th, td, tr{ display:block; }
+  thead{ position:absolute; top:-9999px; left:-9999px; }
+  table{ border:none; }
+  tbody tr{
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    background:#fff;
+  }
+  tr.below-warning{ background: var(--caution-bg); border-color: var(--caution); }
+  tr.below-alarm{ background: var(--alert-bg); border-color: var(--alert); }
+  td{
+    display:flex; justify-content:space-between; align-items:center;
+    text-align:right; border:none; padding: 0.28rem 0;
+  }
+  td::before{
+    content: attr(data-label);
+    font-family:'SF Mono','Menlo',monospace; font-size:0.66rem;
+    letter-spacing:0.03em; text-transform:uppercase; color:var(--ink-dim);
+    text-align:left; padding-right:0.75rem;
+  }
+  td:first-child{ font-weight:600; font-size:0.95rem; padding-bottom:0.4rem; border-bottom:1px dashed var(--panel-border); margin-bottom:0.2rem; }
+  td:first-child::before{ content: ''; }
+}
+
+footer{
+  max-width:960px; margin: 1.5rem auto 0; padding: 1.25rem;
+  color: var(--ink-dim); font-size:0.76rem; border-top:1px solid var(--panel-border);
+}
+footer a{ color: var(--tide); }
+
+@media (max-width: 480px){
+  .status-panel{ grid-template-columns: 70px 1fr; gap:1rem; padding:1.1rem;}
+  .gauge{ height:150px; width:30px; }
+}
 
