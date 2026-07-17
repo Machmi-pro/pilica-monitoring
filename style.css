@@ -213,4 +213,27 @@ footer a{ color: var(--tide); }
   .status-panel{ grid-template-columns: 70px 1fr; gap:1rem; padding:1.1rem;}
   .gauge{ height:150px; width:30px; }
 }
+.site-switcher{
+  display:flex;
+  justify-content:center;
+  gap:0.4rem;
+  background: var(--tide-deep);
+  padding:0.5rem 1rem;
+  font-family:'SF Mono','Menlo',monospace;
+  font-size:0.7rem;
+  letter-spacing:0.02em;
+}
+.site-switcher a{
+  color:rgba(255,255,255,0.65);
+  text-decoration:none;
+  padding:0.3rem 0.75rem;
+  border-radius:99px;
+  transition: background .15s, color .15s;
+}
+.site-switcher a:hover{ color:#fff; }
+.site-switcher a.active{
+  color:#fff;
+  background: rgba(255,255,255,0.15);
+  font-weight:600;
+}
 
