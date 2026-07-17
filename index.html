@@ -1,1 +1,335 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pilica — monitoring wodowskazów</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Rzeka Pilica &middot; źródło &rarr; Zalew Sulejowski &rarr; ujście</p>
+  <h1>Monitoring wodowskazów</h1>
+  <p class="subtitle">
+    Dane pochodzą ze stacji hydrologicznych IMGW-PIB. Pięć stacji w kolejności biegu rzeki, aktualizacja ok. co 4h.
+  </p>
+</header>
+
+<main>
+
+  <div class="stacje-toggle" id="stacje-toggle"></div>
+
+  <div class="status-panel">
+    <div class="gauge-wrap">
+      <div class="gauge" id="gauge">
+        <div class="gauge-line" id="line-max"><span>maks.</span></div>
+        <div class="gauge-line" id="line-warning"><span>ostrzeg.</span></div>
+        <div class="gauge-line" id="line-alarm"><span>alarm.</span></div>
+        <div class="gauge-fill" id="gauge-fill"></div>
+      </div>
+      <p class="gauge-caption">poziom<br>wzgl. zakresu</p>
+    </div>
+    <div class="status-copy">
+      <p class="status-value" id="latest-value">— <span>cm</span></p>
+      <p class="status-label" id="latest-label">Ładowanie danych…</p>
+      <div class="status-badge" id="status-badge">sprawdzam</div>
+      <p class="updated-note" id="updated-note"></p>
+    </div>
+  </div>
+
+  <section>
+    <h2>Poziom wody w czasie</h2>
+    <div class="chart-card">
+      <canvas id="chart" height="260"></canvas>
+      <div class="legend-row">
+        <span><i class="swatch" style="background:var(--tide)"></i> poziom aktualny</span>
+        <span><i class="swatch" style="background:var(--caution)"></i> próg ostrzegawczy</span>
+        <span><i class="swatch" style="background:var(--alert)"></i> próg alarmowy</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Dane historyczne</h2>
+    <div class="chart-card">
+      <button type="button" class="historia-toggle" id="historia-toggle" aria-expanded="false">
+        Pokaż dane historyczne <span class="historia-arrow">▾</span>
+      </button>
+      <div class="historia-wrap" id="historia-wrap" hidden>
+        <table>
+          <thead>
+            <tr><th>Data pomiaru</th><th>Poziom [cm]</th><th>Trend</th></tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Źródło: <a href="https://hydro.imgw.pl" target="_blank" rel="noopener">IMGW-PIB — hydro.imgw.pl</a>.
+  Absolutne minimum/maksimum oraz progi ostrzegawczy/alarmowy pochodzą z danych stacji IMGW; mogą nie być dostępne dla wszystkich stacji.
+</footer>
+
+<script>
+const KOLEJNOSC_STACJI = [
+  "150190280", // Wąsosz
+  "151190090", // Przedbórz
+  "151190100", // Sulejów-Kopalnia
+  "151200020", // Spała
+  "151200090", // Nowe Miasto
+];
+
+const TREND_META = {
+  1:    { strzalka: "↗", slowo: "rosnący" },
+  0:    { strzalka: "→", slowo: "bez zmian" },
+  "-1": { strzalka: "↘", slowo: "malejący" },
+};
+
+let aktualnyStan = null;
+let aktywnaStacja = null;
+let chartInstance = null;
+const historiaCache = {};
+
+async function pobierzJSON(url) {
+  const resp = await fetch(url + '?_=' + Date.now());
+  if (!resp.ok) throw new Error('Błąd pobierania ' + url + ': ' + resp.status);
+  return resp.json();
+}
+
+function formatujDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, '0');
+  return pad(d.getUTCDate()) + '.' + pad(d.getUTCMonth() + 1) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ' UTC';
+}
+
+function trendMeta(trend) {
+  return TREND_META[trend] ?? { strzalka: '?', slowo: 'brak danych' };
+}
+
+function statusFor(d) {
+  if (d.alarmowy_cm != null && d.poziom_cm >= d.alarmowy_cm) {
+    return { slowo: 'stan alarmowy', kolor: 'var(--alert)' };
+  }
+  if (d.ostrzegawczy_cm != null && d.poziom_cm >= d.ostrzegawczy_cm) {
+    return { slowo: 'stan ostrzegawczy', kolor: 'var(--caution)' };
+  }
+  if (d.ostrzegawczy_cm == null && d.alarmowy_cm == null) {
+    return { slowo: 'brak progów', kolor: 'var(--ink-dim)' };
+  }
+  return { slowo: 'w normie', kolor: 'var(--tide)' };
+}
+
+function renderujPrzelacznik() {
+  const wrap = document.getElementById('stacje-toggle');
+  wrap.innerHTML = '';
+  KOLEJNOSC_STACJI.forEach((id) => {
+    const d = aktualnyStan.stacje[id];
+    if (!d) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'stacja-btn' + (id === aktywnaStacja ? ' active' : '');
+    btn.textContent = d.nazwa;
+    btn.addEventListener('click', () => wybierzStacje(id));
+    wrap.appendChild(btn);
+  });
+}
+
+function renderujGauge(d) {
+  const min = d.min_cm, max = d.max_cm;
+  const zakres = (max != null && min != null) ? max - min : null;
+
+  const pozycja = (wartosc) => {
+    if (!zakres || wartosc == null) return null;
+    return Math.max(0, Math.min(100, ((wartosc - min) / zakres) * 100));
+  };
+
+  const pctAktualny = pozycja(d.poziom_cm) ?? 50;
+  document.getElementById('gauge-fill').style.height = pctAktualny + '%';
+
+  const st = statusFor(d);
+  document.getElementById('gauge-fill').style.background =
+    st.slowo === 'stan alarmowy' ? 'linear-gradient(180deg,#e0684a,#c94a30)' :
+    st.slowo === 'stan ostrzegawczy' ? 'linear-gradient(180deg,#e0a94a,#b8791a)' :
+    'linear-gradient(180deg,#3fb6a8,#146b5f)';
+
+  const setLine = (elId, pct) => {
+    const el = document.getElementById(elId);
+    if (pct == null) { el.style.display = 'none'; return; }
+    el.style.display = '';
+    el.style.bottom = pct + '%';
+  };
+  setLine('line-max', 100);
+  setLine('line-warning', pozycja(d.ostrzegawczy_cm));
+  setLine('line-alarm', pozycja(d.alarmowy_cm));
+}
+
+function renderujKarte(id) {
+  const d = aktualnyStan.stacje[id];
+  if (!d || d.poziom_cm == null) {
+    document.getElementById('latest-value').innerHTML = '— <span>cm</span>';
+    document.getElementById('latest-label').textContent = 'Brak aktualnych danych dla tej stacji.';
+    document.getElementById('status-badge').textContent = 'brak danych';
+    return;
+  }
+
+  renderujGauge(d);
+
+  document.getElementById('latest-value').innerHTML = d.poziom_cm + ' <span>cm</span>';
+
+  const trend = trendMeta(d.trend);
+  const linie = [
+    'Trend: ' + trend.strzalka + ' ' + trend.slowo,
+    'Stan poprzedni: ' + (d.poprzedni_cm != null ? d.poprzedni_cm + ' cm' : '—'),
+    '% zakresu (min–max): ' + (d.procent_zakresu != null ? d.procent_zakresu + '%' : '—'),
+    '% do ostrzegawczego: ' + (d.procent_do_alarmowego != null ? d.procent_do_alarmowego + '%' : 'brak progu'),
+    'próg ostrzegawczy: ' + (d.ostrzegawczy_cm != null ? d.ostrzegawczy_cm + ' cm' : '—') +
+      ' · alarmowy: ' + (d.alarmowy_cm != null ? d.alarmowy_cm + ' cm' : '—'),
+  ];
+  document.getElementById('latest-label').innerHTML = linie.join('<br>');
+
+  const st = statusFor(d);
+  const badge = document.getElementById('status-badge');
+  badge.textContent = st.slowo;
+  badge.style.color = st.kolor;
+
+  document.getElementById('updated-note').textContent = 'Pomiar: ' + formatujDate(d.data_pomiaru);
+}
+
+async function pobierzHistorie(id) {
+  if (historiaCache[id]) return historiaCache[id];
+  try {
+    const dane = await pobierzJSON('data/historia/' + id + '.json');
+    historiaCache[id] = dane;
+    return dane;
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
+}
+
+function renderujWykres(historia, d) {
+  const ctx = document.getElementById('chart').getContext('2d');
+  const etykiety = historia.map((w) => formatujDate(w.data_pomiaru));
+  const wartosci = historia.map((w) => w.poziom_cm);
+
+  const datasets = [{
+    label: 'Poziom wody (cm)',
+    data: wartosci,
+    borderColor: '#1f8f80',
+    backgroundColor: 'rgba(31,143,128,0.10)',
+    fill: true,
+    tension: 0.3,
+    borderWidth: 2,
+    pointRadius: historia.length > 40 ? 1.5 : 3,
+    pointBackgroundColor: '#1f8f80',
+  }];
+
+  if (d && d.ostrzegawczy_cm != null) {
+    datasets.push({
+      label: 'Próg ostrzegawczy',
+      data: historia.map(() => d.ostrzegawczy_cm),
+      borderColor: '#b8791a',
+      borderDash: [5, 4],
+      pointRadius: 0,
+    });
+  }
+  if (d && d.alarmowy_cm != null) {
+    datasets.push({
+      label: 'Próg alarmowy',
+      data: historia.map(() => d.alarmowy_cm),
+      borderColor: '#c94a30',
+      borderDash: [5, 4],
+      pointRadius: 0,
+    });
+  }
+
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels: etykiety, datasets },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          ticks: { color: '#5c7876' },
+          grid: { color: 'rgba(14,42,42,0.06)' },
+          title: { display: true, text: 'cm', color: '#5c7876' },
+        },
+        x: {
+          ticks: { color: '#5c7876', autoSkip: true, maxRotation: 0, maxTicksLimit: 8 },
+          grid: { color: 'rgba(14,42,42,0.03)' },
+        },
+      },
+    },
+  });
+}
+
+function renderujTabele(historia, d) {
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+  const ostrzegawczy = d ? d.ostrzegawczy_cm : null;
+  const alarmowy = d ? d.alarmowy_cm : null;
+
+  [...historia].reverse().forEach((w) => {
+    const tr = document.createElement('tr');
+    if (alarmowy != null && w.poziom_cm >= alarmowy) tr.className = 'below-alarm';
+    else if (ostrzegawczy != null && w.poziom_cm >= ostrzegawczy) tr.className = 'below-warning';
+
+    const trend = trendMeta(w.trend);
+    tr.innerHTML =
+      '<td data-label="Data pomiaru">' + formatujDate(w.data_pomiaru) + '</td>' +
+      '<td data-label="Poziom [cm]">' + w.poziom_cm + '</td>' +
+      '<td data-label="Trend">' + trend.strzalka + ' ' + trend.slowo + '</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function initHistoriaToggle() {
+  const btn = document.getElementById('historia-toggle');
+  const wrap = document.getElementById('historia-wrap');
+  btn.addEventListener('click', () => {
+    const otwarte = !wrap.hidden;
+    wrap.hidden = otwarte;
+    btn.classList.toggle('open', !otwarte);
+    btn.setAttribute('aria-expanded', String(!otwarte));
+    btn.childNodes[0].textContent = otwarte ? 'Pokaż dane historyczne ' : 'Ukryj dane historyczne ';
+  });
+}
+
+async function wybierzStacje(id) {
+  aktywnaStacja = id;
+  renderujPrzelacznik();
+  renderujKarte(id);
+
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '<tr><td colspan="3">Ładowanie…</td></tr>';
+
+  const historia = await pobierzHistorie(id);
+  const d = aktualnyStan.stacje[id];
+  renderujWykres(historia, d);
+  renderujTabele(historia, d);
+}
+
+async function start() {
+  try {
+    aktualnyStan = await pobierzJSON('data/aktualny_stan.json');
+    initHistoriaToggle();
+    await wybierzStacje(KOLEJNOSC_STACJI[0]);
+  } catch (e) {
+    console.error(e);
+    document.getElementById('latest-label').textContent = 'Błąd wczytywania danych: ' + e.message;
+  }
+}
+
+start();
+</script>
+</body>
+</html>
 
