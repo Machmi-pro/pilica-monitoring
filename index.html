@@ -27,9 +27,10 @@
         <div class="gauge-line" id="line-max"><span>maks.</span></div>
         <div class="gauge-line" id="line-warning"><span>ostrzeg.</span></div>
         <div class="gauge-line" id="line-alarm"><span>alarm.</span></div>
+        <div class="gauge-line" id="line-min"><span>min. abs.</span></div>
         <div class="gauge-fill" id="gauge-fill"></div>
       </div>
-      <p class="gauge-caption">poziom<br>wzgl. zakresu</p>
+      <p class="gauge-caption">poziom<br>wzgl. maks.</p>
     </div>
     <div class="status-copy">
       <p class="status-value" id="latest-value">— <span>cm</span></p>
@@ -45,6 +46,7 @@
       <canvas id="chart" height="260"></canvas>
       <div class="legend-row">
         <span><i class="swatch" style="background:var(--tide)"></i> poziom aktualny</span>
+        <span><i class="swatch" style="background:var(--alert);opacity:0.6"></i> absolutne minimum (krytyczny)</span>
         <span><i class="swatch" style="background:var(--caution)"></i> próg ostrzegawczy</span>
         <span><i class="swatch" style="background:var(--alert)"></i> próg alarmowy</span>
       </div>
@@ -72,7 +74,8 @@
 
 <footer>
   Źródło: <a href="https://hydro.imgw.pl" target="_blank" rel="noopener">IMGW-PIB — hydro.imgw.pl</a>.
-  Absolutne minimum/maksimum oraz progi ostrzegawczy/alarmowy pochodzą z danych stacji IMGW; mogą nie być dostępne dla wszystkich stacji.
+  Progi ostrzegawczy/alarmowy oraz absolutne minimum/maksimum pochodzą z danych stacji IMGW (mogą nie być dostępne dla wszystkich stacji).
+  Podział na stan "niski"/"krytyczny" poniżej absolutnego minimum to wartości robocze ustalone przez autora strony, nie oficjalna klasyfikacja IMGW.
 </footer>
 
 <script>
@@ -112,17 +115,41 @@ function trendMeta(trend) {
   return TREND_META[trend] ?? { strzalka: '?', slowo: 'brak danych' };
 }
 
-function statusFor(d) {
-  if (d.alarmowy_cm != null && d.poziom_cm >= d.alarmowy_cm) {
-    return { slowo: 'stan alarmowy', kolor: 'var(--alert)' };
+// Skala wskaźnika biegnie od 0 cm (fizyczne dno, niżej nie będzie) do
+// absolutnego maksimum stacji. Absolutne minimum to nie dno skali, tylko
+// oznaczony próg "krytyczny" — to wartość robocza ustalona przez autora
+// strony (nie oficjalny próg IMGW, który dotyczy tylko wysokich stanów).
+//
+// Pasma stanu, od dołu:
+//   <= absolutne minimum                                -> stan krytyczny (susza)
+//   do +15% pasma (minimum -> ostrzegawczy, lub -> maks. gdy brak progu) -> stan niski
+//   dalej, do progu ostrzegawczego                       -> w normie
+//   >= ostrzegawczy                                      -> stan ostrzegawczy (wysoki)
+//   >= alarmowy                                          -> stan alarmowy (wysoki)
+const PROC_NISKI = 0.15; // udział pasma (min -> ostrzegawczy/maks.) uznawany za "niski"
+
+function oceńPoziom(poziom_cm, d) {
+  if (poziom_cm == null) return { slowo: 'brak danych', kolor: 'var(--ink-dim)', klasa: '' };
+
+  if (d.alarmowy_cm != null && poziom_cm >= d.alarmowy_cm) {
+    return { slowo: 'stan alarmowy (wysoki)', kolor: 'var(--alert)', klasa: 'below-alarm' };
   }
-  if (d.ostrzegawczy_cm != null && d.poziom_cm >= d.ostrzegawczy_cm) {
-    return { slowo: 'stan ostrzegawczy', kolor: 'var(--caution)' };
+  if (d.ostrzegawczy_cm != null && poziom_cm >= d.ostrzegawczy_cm) {
+    return { slowo: 'stan ostrzegawczy (wysoki)', kolor: 'var(--caution)', klasa: 'below-warning' };
   }
-  if (d.ostrzegawczy_cm == null && d.alarmowy_cm == null) {
-    return { slowo: 'brak progów', kolor: 'var(--ink-dim)' };
+  if (d.min_cm != null && poziom_cm <= d.min_cm) {
+    return { slowo: 'stan krytyczny (susza)', kolor: 'var(--alert)', klasa: 'below-alarm' };
   }
-  return { slowo: 'w normie', kolor: 'var(--tide)' };
+  if (d.min_cm != null) {
+    const gornaGranicaSkali = d.ostrzegawczy_cm ?? d.max_cm;
+    if (gornaGranicaSkali != null) {
+      const granicaNiski = d.min_cm + PROC_NISKI * (gornaGranicaSkali - d.min_cm);
+      if (poziom_cm <= granicaNiski) {
+        return { slowo: 'stan niski', kolor: 'var(--caution)', klasa: 'below-warning' };
+      }
+    }
+  }
+  return { slowo: 'w normie', kolor: 'var(--tide)', klasa: '' };
 }
 
 function renderujPrzelacznik() {
@@ -141,21 +168,20 @@ function renderujPrzelacznik() {
 }
 
 function renderujGauge(d) {
-  const min = d.min_cm, max = d.max_cm;
-  const zakres = (max != null && min != null) ? max - min : null;
+  const max = d.max_cm;
 
   const pozycja = (wartosc) => {
-    if (!zakres || wartosc == null) return null;
-    return Math.max(0, Math.min(100, ((wartosc - min) / zakres) * 100));
+    if (!max || wartosc == null) return null;
+    return Math.max(0, Math.min(100, (wartosc / max) * 100));
   };
 
-  const pctAktualny = pozycja(d.poziom_cm) ?? 50;
+  const pctAktualny = pozycja(d.poziom_cm) ?? 0;
   document.getElementById('gauge-fill').style.height = pctAktualny + '%';
 
-  const st = statusFor(d);
+  const st = oceńPoziom(d.poziom_cm, d);
   document.getElementById('gauge-fill').style.background =
-    st.slowo === 'stan alarmowy' ? 'linear-gradient(180deg,#e0684a,#c94a30)' :
-    st.slowo === 'stan ostrzegawczy' ? 'linear-gradient(180deg,#e0a94a,#b8791a)' :
+    st.kolor === 'var(--alert)' ? 'linear-gradient(180deg,#e0684a,#c94a30)' :
+    st.kolor === 'var(--caution)' ? 'linear-gradient(180deg,#e0a94a,#b8791a)' :
     'linear-gradient(180deg,#3fb6a8,#146b5f)';
 
   const setLine = (elId, pct) => {
@@ -165,6 +191,7 @@ function renderujGauge(d) {
     el.style.bottom = pct + '%';
   };
   setLine('line-max', 100);
+  setLine('line-min', pozycja(d.min_cm));
   setLine('line-warning', pozycja(d.ostrzegawczy_cm));
   setLine('line-alarm', pozycja(d.alarmowy_cm));
 }
@@ -193,7 +220,7 @@ function renderujKarte(id) {
   ];
   document.getElementById('latest-label').innerHTML = linie.join('<br>');
 
-  const st = statusFor(d);
+  const st = oceńPoziom(d.poziom_cm, d);
   const badge = document.getElementById('status-badge');
   badge.textContent = st.slowo;
   badge.style.color = st.kolor;
@@ -229,6 +256,16 @@ function renderujWykres(historia, d) {
     pointRadius: historia.length > 40 ? 1.5 : 3,
     pointBackgroundColor: '#1f8f80',
   }];
+
+  if (d && d.min_cm != null) {
+    datasets.push({
+      label: 'Absolutne minimum (próg krytyczny)',
+      data: historia.map(() => d.min_cm),
+      borderColor: '#c94a30',
+      borderDash: [2, 3],
+      pointRadius: 0,
+    });
+  }
 
   if (d && d.ostrzegawczy_cm != null) {
     datasets.push({
@@ -274,13 +311,13 @@ function renderujWykres(historia, d) {
 function renderujTabele(historia, d) {
   const tbody = document.getElementById('table-body');
   tbody.innerHTML = '';
-  const ostrzegawczy = d ? d.ostrzegawczy_cm : null;
-  const alarmowy = d ? d.alarmowy_cm : null;
 
   [...historia].reverse().forEach((w) => {
     const tr = document.createElement('tr');
-    if (alarmowy != null && w.poziom_cm >= alarmowy) tr.className = 'below-alarm';
-    else if (ostrzegawczy != null && w.poziom_cm >= ostrzegawczy) tr.className = 'below-warning';
+    if (d) {
+      const st = oceńPoziom(w.poziom_cm, d);
+      if (st.klasa) tr.className = st.klasa;
+    }
 
     const trend = trendMeta(w.trend);
     tr.innerHTML =
@@ -332,4 +369,3 @@ start();
 </script>
 </body>
 </html>
-
