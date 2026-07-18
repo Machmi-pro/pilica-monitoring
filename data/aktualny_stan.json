@@ -1,35 +1,35 @@
 {
-  "aktualizacja": "2026-07-18T13:43:52Z",
+  "aktualizacja": "2026-07-18T17:09:03Z",
   "stacje": {
     "150190280": {
       "nazwa": "Wąsosz",
       "rzeka": "Pilica (254)",
       "wojewodztwo": "śląskie",
-      "poziom_cm": 152.0,
-      "poprzedni_cm": 151.0,
-      "data_pomiaru": "2026-07-18T13:30:00Z",
-      "trend": 1,
+      "poziom_cm": 150.0,
+      "poprzedni_cm": 152.0,
+      "data_pomiaru": "2026-07-18T17:00:00Z",
+      "trend": -1,
       "min_cm": 138,
       "max_cm": 367,
       "ostrzegawczy_cm": 250.0,
       "alarmowy_cm": 300.0,
-      "procent_zakresu": 6.1,
-      "procent_do_alarmowego": 60.8
+      "procent_zakresu": 5.2,
+      "procent_do_alarmowego": 60.0
     },
     "151190090": {
       "nazwa": "Przedbórz",
       "rzeka": "Pilica (254)",
       "wojewodztwo": "łódzkie",
-      "poziom_cm": 187.0,
+      "poziom_cm": 186.0,
       "poprzedni_cm": 187.0,
-      "data_pomiaru": "2026-07-18T13:30:00Z",
-      "trend": 0,
+      "data_pomiaru": "2026-07-18T17:00:00Z",
+      "trend": -1,
       "min_cm": 176,
       "max_cm": 510,
       "ostrzegawczy_cm": 360.0,
       "alarmowy_cm": 400.0,
-      "procent_zakresu": 3.3,
-      "procent_do_alarmowego": 51.9
+      "procent_zakresu": 3.0,
+      "procent_do_alarmowego": 51.7
     },
     "151190100": {
       "nazwa": "Sulejów-Kopalnia",
@@ -37,7 +37,7 @@
       "wojewodztwo": "łódzkie",
       "poziom_cm": 127.0,
       "poprzedni_cm": 127.0,
-      "data_pomiaru": "2026-07-18T13:30:00Z",
+      "data_pomiaru": "2026-07-18T17:00:00Z",
       "trend": 0,
       "min_cm": 105,
       "max_cm": 377,
@@ -51,9 +51,9 @@
       "rzeka": "Pilica (254)",
       "wojewodztwo": "łódzkie",
       "poziom_cm": 27.0,
-      "poprzedni_cm": 28.0,
-      "data_pomiaru": "2026-07-18T13:30:00Z",
-      "trend": -1,
+      "poprzedni_cm": 27.0,
+      "data_pomiaru": "2026-07-18T17:00:00Z",
+      "trend": 0,
       "min_cm": 12,
       "max_cm": 455,
       "ostrzegawczy_cm": 220.0,
@@ -65,16 +65,16 @@
       "nazwa": "Nowe Miasto",
       "rzeka": "Pilica (254)",
       "wojewodztwo": "mazowieckie",
-      "poziom_cm": 33.0,
-      "poprzedni_cm": 34.0,
-      "data_pomiaru": "2026-07-18T13:30:00Z",
-      "trend": -1,
+      "poziom_cm": 34.0,
+      "poprzedni_cm": 33.0,
+      "data_pomiaru": "2026-07-18T17:00:00Z",
+      "trend": 1,
       "min_cm": 30,
       "max_cm": 300,
       "ostrzegawczy_cm": 160.0,
       "alarmowy_cm": 200.0,
-      "procent_zakresu": 1.1,
-      "procent_do_alarmowego": 20.6
+      "procent_zakresu": 1.5,
+      "procent_do_alarmowego": 21.2
     }
   }
 }
