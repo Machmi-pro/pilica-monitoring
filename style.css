@@ -150,6 +150,28 @@ section h2{
 }
 .legend-row span{ display:inline-flex; align-items:center; gap:0.4rem; }
 .swatch{ width:14px; height:3px; display:inline-block; }
+.range-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.range-btn {
+  border: 1px solid rgba(14,42,42,0.15);
+  background: transparent;
+  color: var(--ink-dim);
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.range-btn:hover { border-color: var(--tide); }
+.range-btn.active {
+  background: var(--tide);
+  border-color: var(--tide);
+  color: #fff;
+}
 
 /* --- rozwijana historia (ten sam wzorzec co kap-history w zalewie) --- */
 .historia-toggle{
