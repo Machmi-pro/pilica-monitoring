@@ -57,6 +57,11 @@
     <h2>Poziom wody w czasie</h2>
     <div class="chart-card">
       <canvas id="chart" height="260"></canvas>
+      <div class="range-toggle" id="range-toggle">
+  <button type="button" class="range-btn active" data-range="30">Ostatnie 30 odczytów</button>
+  <button type="button" class="range-btn" data-range="all">Wszystkie</button>
+</div>
+
       <div class="legend-row">
         <span><i class="swatch" style="background:var(--tide)"></i> poziom aktualny</span>
         <span><i class="swatch" style="background:var(--alert);opacity:0.6"></i> absolutne minimum (krytyczny)</span>
