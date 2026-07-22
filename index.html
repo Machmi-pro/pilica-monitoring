@@ -29,6 +29,22 @@
     Dane pochodzą ze stacji hydrologicznych IMGW-PIB. Pięć stacji w kolejności biegu rzeki Pilica, aktualizacja ok. co 4h.
   </p>
 </header>
+<section>
+  <h2>Dane historyczne</h2>
+  <div class="chart-card">
+    <button type="button" class="historia-toggle" id="historia-toggle" aria-expanded="false">
+      Pokaż dane historyczne <span class="historia-arrow">▾</span>
+    </button>
+    <div class="historia-wrap" id="historia-wrap" hidden>
+      <table>
+        <thead>
+          <tr><th>Data pomiaru</th><th>Poziom [cm]</th><th>Trend</th></tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
 
 <main>
 
