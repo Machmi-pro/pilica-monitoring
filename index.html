@@ -22,29 +22,12 @@
     Sulejów-Kopalnia &middot;
     Spała &middot;
     Nowe Miasto nad Pilicą
-    
     </p>
   <h1>Pilica - poziom wody</h1>
   <p class="subtitle">
     Dane pochodzą ze stacji hydrologicznych IMGW-PIB. Pięć stacji w kolejności biegu rzeki Pilica, aktualizacja ok. co 4h.
   </p>
 </header>
-<section>
-  <h2>Dane historyczne</h2>
-  <div class="chart-card">
-    <button type="button" class="historia-toggle" id="historia-toggle" aria-expanded="false">
-      Pokaż dane historyczne <span class="historia-arrow">▾</span>
-    </button>
-    <div class="historia-wrap" id="historia-wrap" hidden>
-      <table>
-        <thead>
-          <tr><th>Data pomiaru</th><th>Poziom [cm]</th><th>Trend</th></tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-      </table>
-    </div>
-  </div>
-</section>
 
 <main>
 
@@ -70,24 +53,40 @@
   </div>
 
   <section>
-  <h2>
-    Poziom wody w czasie
-    <div class="range-toggle" id="range-toggle">
-      <button type="button" class="range-btn active" data-range="30">30</button>
-      <button type="button" class="range-btn" data-range="all">Wszystkie</button>
+    <h2>
+      Poziom wody w czasie
+      <div class="range-toggle" id="range-toggle">
+        <button type="button" class="range-btn active" data-range="30">30</button>
+        <button type="button" class="range-btn" data-range="all">Wszystkie</button>
+      </div>
+    </h2>
+    <div class="chart-card">
+      <canvas id="chart" height="260"></canvas>
+      <div class="legend-row">
+        <span><i class="swatch" style="background:var(--tide)"></i> poziom aktualny</span>
+        <span><i class="swatch" style="background:var(--alert);opacity:0.6"></i> absolutne minimum (krytyczny)</span>
+        <span><i class="swatch" style="background:var(--caution)"></i> próg ostrzegawczy</span>
+        <span><i class="swatch" style="background:var(--alert)"></i> próg alarmowy</span>
+      </div>
     </div>
-  </h2>
-  <div class="chart-card">
-    <canvas id="chart" height="260"></canvas>
-    <div class="legend-row">
-      <span><i class="swatch" style="background:var(--tide)"></i> poziom aktualny</span>
-      <span><i class="swatch" style="background:var(--alert);opacity:0.6"></i> absolutne minimum (krytyczny)</span>
-      <span><i class="swatch" style="background:var(--caution)"></i> próg ostrzegawczy</span>
-      <span><i class="swatch" style="background:var(--alert)"></i> próg alarmowy</span>
-    </div>
-  </div>
-</section>
+  </section>
 
+  <section>
+    <h2>Dane historyczne</h2>
+    <div class="chart-card">
+      <button type="button" class="historia-toggle" id="historia-toggle" aria-expanded="false">
+        Pokaż dane historyczne <span class="historia-arrow">▾</span>
+      </button>
+      <div class="historia-wrap" id="historia-wrap" hidden>
+        <table>
+          <thead>
+            <tr><th>Data pomiaru</th><th>Poziom [cm]</th><th>Trend</th></tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 
 </main>
 
@@ -129,8 +128,7 @@ async function pobierzJSON(url) {
   return resp.json();
 }
 
-
- function formatujDate(iso) {
+function formatujDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   const opts = {
@@ -143,7 +141,6 @@ async function pobierzJSON(url) {
   const get = (typ) => parts.find((p) => p.type === typ)?.value ?? '--';
   return `${get('day')}.${get('month')} ${get('hour')}:${get('minute')}`;
 }
- 
 
 function trendMeta(trend) {
   return TREND_META[trend] ?? { strzalka: '?', slowo: 'brak danych' };
@@ -349,6 +346,7 @@ function renderujWykres(historia, d) {
 
 function renderujTabele(historia, d) {
   const tbody = document.getElementById('table-body');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   [...historia].reverse().forEach((w) => {
@@ -370,6 +368,7 @@ function renderujTabele(historia, d) {
 function initHistoriaToggle() {
   const btn = document.getElementById('historia-toggle');
   const wrap = document.getElementById('historia-wrap');
+  if (!btn || !wrap) return;
   btn.addEventListener('click', () => {
     const otwarte = !wrap.hidden;
     wrap.hidden = otwarte;
@@ -381,11 +380,14 @@ function initHistoriaToggle() {
 
 function initRangeToggle() {
   const wrap = document.getElementById('range-toggle');
-  wrap.querySelectorAll('.range-btn').forEach((btn) => {
+  if (!wrap) return;
+  const buttons = wrap.querySelectorAll('.range-btn');
+  if (!buttons.length) return;
+  buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
       if (btn.dataset.range === aktywnyZakres) return;
       aktywnyZakres = btn.dataset.range;
-      wrap.querySelectorAll('.range-btn').forEach((b) => b.classList.toggle('active', b === btn));
+      buttons.forEach((b) => b.classList.toggle('active', b === btn));
       odswiezWykresITabele();
     });
   });
@@ -404,7 +406,7 @@ async function wybierzStacje(id) {
   renderujKarte(id);
 
   const tbody = document.getElementById('table-body');
-  tbody.innerHTML = '<tr><td colspan="3">Ładowanie…</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="3">Ładowanie…</td></tr>';
 
   aktywnaHistoria = await pobierzHistorie(id);
   odswiezWykresITabele();
