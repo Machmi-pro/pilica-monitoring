@@ -150,33 +150,33 @@ section h2{
 }
 .legend-row span{ display:inline-flex; align-items:center; gap:0.4rem; }
 .swatch{ width:14px; height:3px; display:inline-block; }
-.range-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: rgba(14,42,42,0.04);
-  border: 1px solid rgba(14,42,42,0.1);
-  border-radius: 999px;
-  padding: 0.25rem;
+
+/* --- przełącznik zakresu wykresu, ta sama pigułka co stacje-toggle --- */
+.range-toggle{
+  display:inline-flex;
+  gap:0.25rem;
+  background: var(--bg-soft);
+  border:1px solid var(--panel-border);
+  border-radius:99px;
+  padding:2px;
   margin-bottom: 1rem;
 }
-.range-btn {
-  border: none;
-  background: transparent;
-  color: var(--ink-dim);
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+.range-btn{
+  flex:0 0 auto;
+  font-family:'SF Mono','Menlo',monospace;
+  font-size:0.72rem;
+  letter-spacing:0.02em;
+  border:none;
+  background:transparent;
+  color:var(--ink-dim);
+  padding:0.42rem 0.85rem;
+  border-radius:99px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition: background .15s, color .15s;
 }
-.range-btn:hover:not(.active) {
-  color: var(--tide);
-}
-.range-btn.active {
-  background: var(--tide);
-  color: #fff;
-}
+.range-btn:hover:not(.active){ color: var(--tide); }
+.range-btn.active{ background: var(--tide); color:#fff; }
 
 
 /* --- rozwijana historia (ten sam wzorzec co kap-history w zalewie) --- */
@@ -264,4 +264,3 @@ footer a{ color: var(--tide); }
   background: rgba(255,255,255,0.15);
   font-weight:600;
 }
-
