@@ -56,12 +56,11 @@
   <section>
     <h2>Poziom wody w czasie</h2>
     <div class="chart-card">
-      <canvas id="chart" height="260"></canvas>
       <div class="range-toggle" id="range-toggle">
-  <button type="button" class="range-btn active" data-range="30">Ostatnie 30 odczytów</button>
-  <button type="button" class="range-btn" data-range="all">Wszystkie</button>
-</div>
-
+        <button type="button" class="range-btn active" data-range="30">Ostatnie 30 odczytów</button>
+        <button type="button" class="range-btn" data-range="all">Wszystkie</button>
+      </div>
+      <canvas id="chart" height="260"></canvas>
       <div class="legend-row">
         <span><i class="swatch" style="background:var(--tide)"></i> poziom aktualny</span>
         <span><i class="swatch" style="background:var(--alert);opacity:0.6"></i> absolutne minimum (krytyczny)</span>
@@ -118,6 +117,9 @@ let aktualnyStan = null;
 let aktywnaStacja = null;
 let chartInstance = null;
 const historiaCache = {};
+
+let aktywnaHistoria = [];
+let aktywnyZakres = '30';
 
 async function pobierzJSON(url) {
   const resp = await fetch(url + '?_=' + Date.now());
@@ -270,6 +272,11 @@ async function pobierzHistorie(id) {
   }
 }
 
+function filtrujHistorie(historia, zakres) {
+  if (zakres === 'all') return historia;
+  return historia.slice(-parseInt(zakres, 10));
+}
+
 function renderujWykres(historia, d) {
   const ctx = document.getElementById('chart').getContext('2d');
   const etykiety = historia.map((w) => formatujDate(w.data_pomiaru));
@@ -282,8 +289,8 @@ function renderujWykres(historia, d) {
     backgroundColor: 'rgba(31,143,128,0.10)',
     fill: true,
     tension: 0.3,
-    borderWidth: 2,
-    pointRadius: historia.length > 40 ? 1.5 : 3,
+    borderWidth: 1.5,
+    pointRadius: historia.length > 60 ? 1 : historia.length > 20 ? 1.5 : 2.5,
     pointBackgroundColor: '#1f8f80',
   }];
 
@@ -370,6 +377,25 @@ function initHistoriaToggle() {
   });
 }
 
+function initRangeToggle() {
+  const wrap = document.getElementById('range-toggle');
+  wrap.querySelectorAll('.range-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.range === aktywnyZakres) return;
+      aktywnyZakres = btn.dataset.range;
+      wrap.querySelectorAll('.range-btn').forEach((b) => b.classList.toggle('active', b === btn));
+      odswiezWykresITabele();
+    });
+  });
+}
+
+function odswiezWykresITabele() {
+  const d = aktualnyStan.stacje[aktywnaStacja];
+  const dane = filtrujHistorie(aktywnaHistoria, aktywnyZakres);
+  renderujWykres(dane, d);
+  renderujTabele(dane, d);
+}
+
 async function wybierzStacje(id) {
   aktywnaStacja = id;
   renderujPrzelacznik();
@@ -378,16 +404,15 @@ async function wybierzStacje(id) {
   const tbody = document.getElementById('table-body');
   tbody.innerHTML = '<tr><td colspan="3">Ładowanie…</td></tr>';
 
-  const historia = await pobierzHistorie(id);
-  const d = aktualnyStan.stacje[id];
-  renderujWykres(historia, d);
-  renderujTabele(historia, d);
+  aktywnaHistoria = await pobierzHistorie(id);
+  odswiezWykresITabele();
 }
 
 async function start() {
   try {
     aktualnyStan = await pobierzJSON('data/aktualny_stan.json');
     initHistoriaToggle();
+    initRangeToggle();
     await wybierzStacje(KOLEJNOSC_STACJI[0]);
   } catch (e) {
     console.error(e);
