@@ -1006,5 +1006,12 @@
     "trend": -1,
     "procent_zakresu": 5.5,
     "procent_do_alarmowego": 52.2
+  },
+  {
+    "data_pomiaru": "2026-08-10T05:30:00Z",
+    "poziom_cm": 120.0,
+    "trend": 0,
+    "procent_zakresu": 5.5,
+    "procent_do_alarmowego": 52.2
   }
 ]
