@@ -1,20 +1,20 @@
 {
-  "aktualizacja": "2026-08-15T16:36:22Z",
+  "aktualizacja": "2026-08-15T20:34:37Z",
   "stacje": {
     "150190280": {
       "nazwa": "Wąsosz",
       "rzeka": "Pilica (254)",
       "wojewodztwo": "śląskie",
-      "poziom_cm": 141.0,
-      "poprzedni_cm": 144.0,
-      "data_pomiaru": "2026-08-15T16:10:00Z",
-      "trend": -1,
+      "poziom_cm": 146.0,
+      "poprzedni_cm": 141.0,
+      "data_pomiaru": "2026-08-15T20:20:00Z",
+      "trend": 1,
       "min_cm": 138,
       "max_cm": 367,
       "ostrzegawczy_cm": 250.0,
       "alarmowy_cm": 300.0,
-      "procent_zakresu": 1.3,
-      "procent_do_alarmowego": 56.4
+      "procent_zakresu": 3.5,
+      "procent_do_alarmowego": 58.4
     },
     "151190090": {
       "nazwa": "Przedbórz",
@@ -22,7 +22,7 @@
       "wojewodztwo": "łódzkie",
       "poziom_cm": 181.0,
       "poprzedni_cm": 181.0,
-      "data_pomiaru": "2026-08-15T16:20:00Z",
+      "data_pomiaru": "2026-08-15T20:20:00Z",
       "trend": 0,
       "min_cm": 176,
       "max_cm": 510,
@@ -37,7 +37,7 @@
       "wojewodztwo": "łódzkie",
       "poziom_cm": 121.0,
       "poprzedni_cm": 121.0,
-      "data_pomiaru": "2026-08-15T16:20:00Z",
+      "data_pomiaru": "2026-08-15T20:10:00Z",
       "trend": 0,
       "min_cm": 105,
       "max_cm": 377,
@@ -52,7 +52,7 @@
       "wojewodztwo": "łódzkie",
       "poziom_cm": 37.0,
       "poprzedni_cm": 37.0,
-      "data_pomiaru": "2026-08-15T16:20:00Z",
+      "data_pomiaru": "2026-08-15T20:20:00Z",
       "trend": 0,
       "min_cm": 12,
       "max_cm": 455,
@@ -65,16 +65,16 @@
       "nazwa": "Nowe Miasto",
       "rzeka": "Pilica (254)",
       "wojewodztwo": "mazowieckie",
-      "poziom_cm": 32.0,
+      "poziom_cm": 33.0,
       "poprzedni_cm": 32.0,
-      "data_pomiaru": "2026-08-15T16:20:00Z",
-      "trend": 0,
+      "data_pomiaru": "2026-08-15T20:20:00Z",
+      "trend": 1,
       "min_cm": 30,
       "max_cm": 300,
       "ostrzegawczy_cm": 160.0,
       "alarmowy_cm": 200.0,
-      "procent_zakresu": 0.7,
-      "procent_do_alarmowego": 20.0
+      "procent_zakresu": 1.1,
+      "procent_do_alarmowego": 20.6
     }
   }
 }
