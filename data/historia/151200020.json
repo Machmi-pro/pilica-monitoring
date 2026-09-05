@@ -1937,5 +1937,12 @@
     "trend": -1,
     "procent_zakresu": 5.2,
     "procent_do_alarmowego": 15.9
+  },
+  {
+    "data_pomiaru": "2026-09-05T14:50:00Z",
+    "poziom_cm": 35.0,
+    "trend": 0,
+    "procent_zakresu": 5.2,
+    "procent_do_alarmowego": 15.9
   }
 ]
