@@ -2602,5 +2602,12 @@
     "trend": 0,
     "procent_zakresu": 9.2,
     "procent_do_alarmowego": 63.6
+  },
+  {
+    "data_pomiaru": "2026-09-29T10:30:00Z",
+    "poziom_cm": 159.0,
+    "trend": 0,
+    "procent_zakresu": 9.2,
+    "procent_do_alarmowego": 63.6
   }
 ]
