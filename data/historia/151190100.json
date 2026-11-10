@@ -3533,5 +3533,12 @@
     "trend": -1,
     "procent_zakresu": 11.8,
     "procent_do_alarmowego": 59.6
+  },
+  {
+    "data_pomiaru": "2026-11-10T02:30:00Z",
+    "poziom_cm": 136.0,
+    "trend": -1,
+    "procent_zakresu": 11.4,
+    "procent_do_alarmowego": 59.1
   }
 ]
